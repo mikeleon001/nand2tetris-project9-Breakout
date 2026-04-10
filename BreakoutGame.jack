@@ -1,0 +1,203 @@
+class BreakoutGame {
+    field Paddle paddle;
+    field Ball ball;
+    field Array bricks;
+    field int numBricks, brickWidth, brickHeight;
+    field int rows, cols;
+    field int score, lives;
+    field boolean gameOver;
+
+    constructor BreakoutGame new() {
+        let rows = 4;
+        let cols = 10;
+        let numBricks = rows * cols;
+        let brickWidth = 49;
+        let brickHeight = 10;
+        let score = 0;
+        let lives = 3;
+        let gameOver = false;
+
+        do Screen.clearScreen();
+        do drawBorder();
+        do initBricks();
+
+        let paddle = Paddle.new(206, 230, 70, 8);
+        let ball = Ball.new(250, 200, 6);
+
+        do drawScore();
+        return this;
+    }
+
+    method void drawBorder() {
+        do Screen.setColor(true);
+        do Screen.drawLine(0, 0, 511, 0);
+        do Screen.drawLine(0, 0, 0, 255);
+        do Screen.drawLine(511, 0, 511, 255);
+        return;
+    }
+
+    method void initBricks() {
+        var int i, row, col, bx, by;
+        let bricks = Array.new(numBricks);
+        let i = 0;
+        let row = 0;
+        while (row < rows) {
+            let col = 0;
+            while (col < cols) {
+                let bx = 6 + (col * 50);
+                let by = 20 + (row * 14);
+                let bricks[i] = 1;
+                do Screen.setColor(true);
+                do Screen.drawRectangle(bx, by, bx + brickWidth - 2, by + brickHeight - 2);
+                let col = col + 1;
+                let i = i + 1;
+            }
+            let row = row + 1;
+        }
+        return;
+    }
+
+    method void drawScore() {
+        do Output.moveCursor(22, 40);
+        do Output.printString("Score:");
+        do Output.printInt(score);
+        do Output.printString("  Lives:");
+        do Output.printInt(lives);
+        return;
+    }
+
+    method void checkBrickCollision() {
+        var int i, row, col, bx, by;
+        var int ballX, ballY, ballSize;
+        let ballX = ball.getX();
+        let ballY = ball.getY();
+        let ballSize = ball.getSize();
+        let i = 0;
+        let row = 0;
+
+        while (row < rows) {
+            let col = 0;
+            while (col < cols) {
+                let bx = 6 + (col * 50);
+                let by = 20 + (row * 14);
+                if (bricks[i] = 1) {
+                    if (~(ballX > (bx + brickWidth - 2)) &
+                        ~((ballX + ballSize) < bx) &
+                        ~(ballY > (by + brickHeight - 2)) &
+                        ~((ballY + ballSize) < by)) {
+                        // Hit this brick
+                        let bricks[i] = 0;
+                        do Screen.setColor(false);
+                        do Screen.drawRectangle(bx, by, bx + brickWidth - 2, by + brickHeight - 2);
+                        do ball.bounceY();
+                        let score = score + 10;
+                        let numBricks = numBricks - 1;
+                        do drawScore();
+                    }
+                }
+                let col = col + 1;
+                let i = i + 1;
+            }
+            let row = row + 1;
+        }
+        return;
+    }
+
+    method void checkPaddleCollision() {
+        var int ballX, ballY, ballSize;
+        var int padX, padY, padW;
+        let ballX = ball.getX();
+        let ballY = ball.getY();
+        let ballSize = ball.getSize();
+        let padX = paddle.getX();
+        let padY = paddle.getY();
+        let padW = paddle.getWidth();
+
+        if (~(ballX > (padX + padW)) &
+            ~((ballX + ballSize) < padX) &
+            ~(ballY > (padY + paddle.getHeight())) &
+            ~((ballY + ballSize) < padY)) {
+            do ball.bounceY();
+        }
+        return;
+    }
+
+    method boolean allBricksCleared() {
+        return (numBricks = 0);
+    }
+
+    method void run() {
+        var char key;
+        var boolean running;
+        let running = true;
+
+        while (running) {
+            let key = Keyboard.keyPressed();
+	    
+	    if (~gameOver) {
+            	if (key = 130) { do paddle.moveLeft(); }  // Left arrow
+            	if (key = 132) { do paddle.moveRight(); } // Right arrow
+
+            	do ball.move();
+            	do checkBrickCollision();
+            	do checkPaddleCollision();
+
+            	// Ball fell past paddle
+            	if (ball.getY() > 245) {
+                    let lives = lives - 1;
+		    do ball.eraseBall();
+               	    do drawScore();
+                    if (lives = 0) {
+                    	let gameOver = true;
+			do ball.eraseBall();
+                        do showMessage("GAME OVER! Press Escape.");
+                    } else {
+			do showMessage("Miss! Get ready...");
+			do Sys.wait(2000);
+			do clearMessage();
+                        do resetBall();
+                    }
+                }
+
+                // All bricks cleared
+                if (allBricksCleared()) {
+                    let gameOver = true;
+		    do ball.eraseBall();
+                    do showMessage("YOU WIN! Press Escape.");
+            	} 
+	    } else {
+            	if (key = 140) { let running = false; }
+	    }
+
+            do Sys.wait(15);
+        }
+        return;
+    }
+
+    method void resetBall() {
+	do ball.erase();
+        do ball.dispose();
+	let ball = Ball.new(250, 200, 6);
+        return;
+    }
+
+    method void showMessage(String msg) {
+        do Output.moveCursor(11, 10);
+        do Output.printString(msg);
+        return;
+    }
+    
+    method void clearMessage() {
+	do Output.moveCursor(11, 10);
+	do Output.printString("                          ");
+	return;
+    }
+
+    method void dispose() {
+        do paddle.dispose();
+        do ball.dispose();
+        do bricks.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+}

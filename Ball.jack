@@ -1,0 +1,76 @@
+class Ball {
+    field int x, y, size;
+    field int dirX, dirY;
+
+    constructor Ball new(int startX, int startY, int ballSize) {
+        let x = startX;
+        let y = startY;
+        let size = ballSize;
+        let dirX = 2;
+        let dirY = -2;
+        do draw();
+        return this;
+    }
+
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    method void move() {
+        do erase();
+        let x = x + dirX;
+        let y = y + dirY;
+
+        // Bounce off left and right walls
+        if (x < 2) {
+            let x = 2;
+            let dirX = -dirX;
+        }
+        if ((x + size) > 510) {
+            let x = 510 - size;
+            let dirX = -dirX;
+        }
+
+        // Bounce off top wall
+        if (y < 2) {
+            let y = 2;
+            let dirY = -dirY;
+        }
+
+        do draw();
+        return;
+    }
+
+    method void bounceX() {
+        let dirX = -dirX;
+        return;
+    }
+
+    method void bounceY() {
+        let dirY = -dirY;
+        return;
+    }
+    
+    method void eraseBall() {
+	do erase();
+	return;
+    }
+
+    method int getX() { return x; }
+    method int getY() { return y; }
+    method int getSize() { return size; }
+    method int getDirY() { return dirY; }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}
